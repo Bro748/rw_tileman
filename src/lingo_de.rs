@@ -328,7 +328,7 @@ pub fn parse_tile_init<'a>(
                 Ok(new_item) => {
                     if current_category.tiles.contains(&new_item)
                     {
-                        let index = current_category.tiles.iter().position(|tile|tile == new_item).unwrap();
+                        let index = current_category.tiles.iter().position(|tile| *tile == new_item).unwrap();
                         current_category.tiles[index] = new_item; }
                     else { current_category.tiles.push(new_item); }
                 }
