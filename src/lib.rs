@@ -244,10 +244,8 @@ impl TileInit {
     }
 }
 
-const TILE_ON_MARKER: &str = "--TILE_ENABLED";
-const CATEGORY_ON_MARKER: &str = "--CATEGORY_ENABLED";
 const CELL_TEXTURE_DIM: usize = 5;
-pub static ASSETS_DIR: Dir<'_> = include_dir!("$TILEMAN_ASSETS");
+pub static ASSETS_DIR: Dir<'_> = include_dir!("./assets");
 
 thread_local! {
     static TILE_CELL_NUMBERS: CycleMap<TileCell, i32> = vec![

@@ -165,7 +165,7 @@ impl LingoData {
     }
 }
 
-pub fn parse_tile_info<'a>(text: &'a str, force_enabled: bool) -> Result<TileInfo, DeserError> {
+pub fn parse_tile_info<'a>(text: &'a str, from_vanilla: bool) -> Result<TileInfo, DeserError> {
     lazy_static::lazy_static! {
         static ref REGEX_PROPERTIES: regex::Regex = regex::Regex::new(REGEXSTR_PROPS).unwrap();
     }
@@ -226,7 +226,7 @@ pub fn parse_tile_info<'a>(text: &'a str, force_enabled: bool) -> Result<TileInf
         random_vars: random_vars.ok(),
         preview_pos: preview_pos?,
         tags: tags?.as_string_array().unwrap_or(Vec::new()),
-        active: force_enabled || text.ends_with(TILE_ON_MARKER),
+        active: from_vanilla,
     };
     Ok(res)
     //Err(DeserError::Todo)
@@ -306,7 +306,14 @@ pub fn parse_tile_init<'a>(
             //let maybe_new_category = Err(DeserError::MissingValue);
             let maybe_new_category = parse_category_header(line);
             match maybe_new_category {
-                Ok(newcat) => {
+                Ok(mut newcat) => {
+                    //thalber would kill me for this, but it compiles
+                    //and supposedly in rust if it compiles it's Good Code, so :leditoroverload:
+                    for oldcat in additional_categories.clone()
+                    {
+                        if oldcat == newcat
+                        { newcat.subfolder = oldcat.subfolder; break; }
+                    }
                     categories.push(current_category);
                     current_category = newcat;
                 }
@@ -323,11 +330,10 @@ pub fn parse_tile_init<'a>(
         }
     }
     categories.push(current_category);
-    let additional_categories_clone = additional_categories.clone();
+    let categories_clone = categories.clone();
     categories = categories
         .into_iter()
-        .filter(|cat| cat.tiles.len() > 0 && !additional_categories_clone.contains(cat))
-        .chain(additional_categories)
+        .chain(additional_categories.into_iter().filter(|cat| !categories_clone.contains(cat)))
         .collect();
     for category_index in indices(&categories) {
         let category = &mut categories[category_index];
@@ -376,7 +382,7 @@ pub fn collect_categories_from_subfolders(
                     colorsplit.next().unwrap_or(0u8),
                     colorsplit.next().unwrap_or(0u8),
                 ];
-                let enabled = contents.lines().any(|item| item == CATEGORY_ON_MARKER);
+                let enabled = false;
                 let mut index = 0;
                 for line in contents.lines() {
                     if let Some(caps) = REGEX_CATEGORY_INDEX.captures(line) {

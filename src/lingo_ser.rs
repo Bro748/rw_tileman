@@ -1,6 +1,5 @@
 use crate::{
     lingo_ser, SerErrorReports, TileCategory, TileCategoryChange, TileCell, TileInfo, TileInit,
-    CATEGORY_ON_MARKER,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -192,9 +191,6 @@ pub fn backup_init_files(init: &TileInit) -> SerErrorReports {
 
 pub fn serialize_category(category: &TileCategory, exclude_disabled: bool) -> Vec<String> {
     let mut res = Vec::new();
-    if category.enabled {
-        res.push(String::from(CATEGORY_ON_MARKER))
-    }
     res.push(serialize_category_header(category));
     for item in category.tiles.iter().filter_map(|tile| {
         if !tile.active && exclude_disabled {
@@ -211,8 +207,7 @@ pub fn serialize_category(category: &TileCategory, exclude_disabled: bool) -> Ve
 pub fn serialize_category_header(category: &TileCategory) -> String {
     let name = category.name.clone();
     let color = aggregate_number_array(category.color.clone().into_iter().map(|num| num as i32));
-    let index = category.index;
-    format!(r#"-["{name}", color({color})]--CATEGORY_INDEX:{index}"#)
+    format!(r#"-["{name}", color({color})]"#)
 }
 
 pub fn serialize_tileinfo(tile: &TileInfo) -> String {
@@ -238,12 +233,8 @@ pub fn serialize_tileinfo(tile: &TileInfo) -> String {
     let bf_tiles = tile.buffer_tiles;
     let pt_pos = 0;
     let tags = aggregate_string_array(tile.tags.clone().into_iter());
-    let on_tag = match tile.active {
-        true => crate::TILE_ON_MARKER,
-        false => "",
-    };
     format!(
-        r#"[#nm:"{nm}", #sz:point({sz}), #specs:[{specs}], #specs2:{specs2}, #tp:"{tp}", #repeatL:[{repeat}], #bfTiles:{bf_tiles}, #rnd:{rnd}, #ptPos:{pt_pos}, #tags:[{tags}]]{on_tag}"#
+        r#"[#nm:"{nm}", #sz:point({sz}), #specs:[{specs}], #specs2:{specs2}, #tp:"{tp}", #repeatL:[{repeat}], #bfTiles:{bf_tiles}, #rnd:{rnd}, #ptPos:{pt_pos}, #tags:[{tags}]]"#
     )
 }
 
