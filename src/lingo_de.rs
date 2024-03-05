@@ -237,7 +237,7 @@ pub fn parse_tile_info_multiple<'a>(
 ) -> Result<(Vec<TileInfo>, DeserErrorReports), DeserError> {
     let mut errors = Vec::new();
     let mut tiles = Vec::new();
-    for line in text.lines().filter(|line| !line.starts_with("--")) {
+    for line in text.lines().filter(|line| !line.starts_with("--") && !line.trim().is_empty()) {
         match parse_tile_info(line, false) {
             Ok(tile) => tiles.push(tile),
             Err(err) => errors.push((line.to_string(), err)),
@@ -296,7 +296,7 @@ pub fn parse_tile_init<'a>(
     let mut categories = Vec::new();
     //let mut results_map = GroupMap::new();
 
-    for line in text.lines().filter(|line| !line.starts_with("--")) {
+    for line in text.lines().filter(|line| !line.starts_with("--") && !line.trim().is_empty()) {
         // if line.starts_with("--") || line.trim().is_empty() {
         //     continue;
         // } else

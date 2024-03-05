@@ -98,9 +98,11 @@ impl TilemanApp {
             Ok((actual_init, errors)) => {
                 //init = Some(actual_init);
                 self.init = Some(actual_init);
-                log::error!(
-                    "Errors encountered when reading data (ignored on apply) : {errors:#?}\n"
-                );
+                if !errors.is_empty() {
+                    log::error!(
+                        "Errors encountered when reading data (ignored on apply) : {errors:#?}\n"
+                    );
+                }
             }
             Err(err) => {
                 self.init = None;
