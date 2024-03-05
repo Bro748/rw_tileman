@@ -13,17 +13,8 @@ pub fn rewrite_init(
     init: &TileInit,
     _output_path: std::path::PathBuf,
 ) -> Result<SerErrorReports, (SerError, SerErrorReports)> {
-    let now = std::time::Instant::now();
     let mut main_init_to_write = String::new();
-    let mut errors = backup_init_files(init);
-    if errors.len() > 0 {
-        log::error!(
-            "encountered errors during backup: {:#?}",
-            (now, errors.clone())
-        );
-        return Err((SerError::InitBackupFailed, errors));
-        //panic!("Could not create init backups!")
-    }
+    let mut errors = SerErrorReports::new();
     for mut category in init.categories.clone().into_iter() {
         match category.scheduled_change {
             TileCategoryChange::None => {}

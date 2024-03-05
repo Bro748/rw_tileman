@@ -555,65 +555,65 @@ fn draw_toolbox(
     output_path: &mut std::path::PathBuf,
 ) {
     ui.horizontal(|ui| {
-        if ui
-            .button("save inits")
-            .on_hover_text_at_pointer("Write main and subfolder inits to disk (creates a backup)")
-            .clicked()
-        {
+        if ui.button("save inits")
+            .on_hover_text_at_pointer("Write main and subfolder inits to disk")
+            .clicked() {
             
-            if let Err((err, _)) = lingo_ser::rewrite_init(&init, output_path.clone()) {
-                *scheduled_action = AppScheduledAction::DisplayMessage 
-                {
+            if let Err((err, _)) = lingo_ser::rewrite_init(init, output_path.clone()) {
+                *scheduled_action = AppScheduledAction::DisplayMessage {
                     icon: msgbox::IconType::Error,
                     title: String::from("Error saving inits"),
                     text: format!("failed to save inits to disk due to the following error: {err:?}. details in tileman.log") 
                 };
                 //format!("failed to save inits to disk due to the following error: {err:?}. details in tileman.log")
-            }
-            else {
+            } else {
                 *scheduled_action = AppScheduledAction::Reload;
                 //log::info!("saved with result {:#?}", result)
             }
-            
         };
-        if (ui.button("reload"))
+
+        if ui.button("reload")
             .on_hover_text_at_pointer("Reload inits from disk")
-            .clicked()
-        {
+            .clicked() {
             *scheduled_action = AppScheduledAction::Reload;
         }
+
+        if ui.button("backup")
+            .on_hover_text_at_pointer("Makes a backup of the main and subfolder inits currently present on disk")
+            .clicked() {
+            let errors = lingo_ser::backup_init_files(init);
+            if !errors.is_empty() {
+                log::error!(
+                    "encountered errors during backup: {:#?}",
+                    (std::time::Instant::now(), errors)
+                );
+            }
+        }
+
         ui.add(egui::Slider::new(preview_scale, 5f32..=40f32))
             .on_hover_text_at_pointer("Select tile preview scale");
-        if ui
-            .button("all2sub")
-            .on_hover_text_at_pointer("Move all categories from main init to subfolders")
-            .clicked()
-        {
-            for cat in init.categories.iter_mut() {
-                if cat.subfolder.is_none() {
-                    cat.scheduled_change = TileCategoryChange::MoveToSubfolder;
-                }
-            }
-        }
-        if ui
-            .button("all2main")
-            .on_hover_text_at_pointer("Move all categories from subfolders to main init")
-            .clicked()
-        {
-            for cat in init.categories.iter_mut() {
-                if cat.subfolder.is_some() {
-                    cat.scheduled_change = TileCategoryChange::MoveFromSubfolder;
-                }
-            }
-        }
-        #[cfg(debug_assertions)]
-        if ui.button("test popup").clicked() {
-            *scheduled_action = AppScheduledAction::DisplayMessage 
-            { 
-                icon: msgbox::IconType::None, 
-                title: String::from("que"), 
-                text: String::from("guh")
-            }
-        }
+
+        //if ui.button("all2sub")
+        //    .on_hover_text_at_pointer("Move all categories from main init to subfolders")
+        //    .clicked()
+        //{
+        //    for cat in init.categories.iter_mut() {
+        //        if cat.subfolder.is_none() {
+        //            cat.scheduled_change = TileCategoryChange::MoveToSubfolder;
+        //        }
+        //    }
+        //}
+
+        //if ui
+        //    .button("all2main")
+        //    .on_hover_text_at_pointer("Move all categories from subfolders to main init")
+        //    .clicked()
+        //{
+        //    for cat in init.categories.iter_mut() {
+        //        if cat.subfolder.is_some() {
+        //            cat.scheduled_change = TileCategoryChange::MoveFromSubfolder;
+        //        }
+        //    }
+        //};
     });
 }
