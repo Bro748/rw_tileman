@@ -556,7 +556,7 @@ fn draw_toolbox(
 ) {
     ui.horizontal(|ui| {
         if ui
-            .button("save")
+            .button("save inits")
             .on_hover_text_at_pointer("Write main and subfolder inits to disk (creates a backup)")
             .clicked()
         {
