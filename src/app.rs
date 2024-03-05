@@ -119,7 +119,7 @@ impl TilemanApp {
 impl eframe::App for TilemanApp {
     fn save(&mut self, _storage: &mut dyn eframe::Storage) {}
 
-    fn on_close_event(&mut self) -> bool {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         if let Err(err) = std::fs::write(
             std::env::current_dir()
                 .expect("could not get wd")
@@ -128,18 +128,10 @@ impl eframe::App for TilemanApp {
         ) {
             log::error!("error saving config to disk: {err}")
         }
-
-        true
     }
-
-    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {}
 
     fn auto_save_interval(&self) -> std::time::Duration {
         std::time::Duration::from_secs(30)
-    }
-
-    fn max_size_points(&self) -> egui::Vec2 {
-        egui::Vec2::INFINITY
     }
 
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
@@ -151,19 +143,9 @@ impl eframe::App for TilemanApp {
         // _visuals.window_fill() would also be a natural choice
     }
 
-    fn persist_native_window(&self) -> bool {
-        true
-    }
-
     fn persist_egui_memory(&self) -> bool {
         true
     }
-
-    fn warm_up_enabled(&self) -> bool {
-        false
-    }
-
-    fn post_rendering(&mut self, _window_size_px: [u32; 2], _frame: &eframe::Frame) {}
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("select_path").show(ctx, |ui| {
@@ -345,19 +327,23 @@ fn draw_tile_details(
                         *item.size.get(1).unwrap_or(&1) as usize,
                     );
                     ui.heading("specs1");
+
                     let maybe_thandle_s1 = match (maybe_preview_cache.clone(), changed_selection) {
                         (Some(thandle), false) => Some(thandle.specs),
                         _ => None,
                     };
                     let thandle_s1 =
                         maybe_thandle_s1.unwrap_or_else(|| create_specs_texture(ctx, item, false));
-                    ui.image(
-                        thandle_s1.id(),
-                        egui::vec2(
-                            size_x as f32 * *preview_scale,
-                            size_y as f32 * *preview_scale,
-                        ),
+
+                    ui.add(
+                        egui::Image::from_texture(&thandle_s1).fit_to_exact_size(
+                            egui::vec2(
+                                size_x as f32 * *preview_scale,
+                                size_y as f32 * *preview_scale,
+                            )
+                        )
                     );
+
                     let mut maybe_thandle_s2 =
                         match (maybe_preview_cache.clone(), changed_selection) {
                             (Some(thandle), false) => thandle.specs2,
@@ -367,15 +353,13 @@ fn draw_tile_details(
                         ui.heading("specs2");
                         maybe_thandle_s2 = maybe_thandle_s2
                             .or_else(|| Some(create_specs_texture(ctx, item, true)));
-                        ui.image(
-                            maybe_thandle_s2
-                                .clone()
-                                .expect("this should not happen: specs2 draw")
-                                .id(),
-                            egui::vec2(
-                                size_x as f32 * *preview_scale,
-                                size_y as f32 * *preview_scale,
-                            ),
+                        ui.add(
+                            egui::Image::from_texture(&maybe_thandle_s2.clone().unwrap()).fit_to_exact_size(
+                                egui::vec2(
+                                    size_x as f32 * *preview_scale,
+                                    size_y as f32 * *preview_scale,
+                                )
+                            )
                         );
                     }
                     *maybe_preview_cache = Some(PreviewCache {
@@ -441,7 +425,7 @@ fn create_specs_texture(
     );
     let mut options = egui::TextureOptions::default();
     options.magnification = egui::TextureFilter::Nearest;
-    ctx.load_texture(name, egui::ImageData::Color(image), options)
+    ctx.load_texture(name, image, options)
 }
 
 fn draw_tiles_panel(
