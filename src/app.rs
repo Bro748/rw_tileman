@@ -177,7 +177,7 @@ impl eframe::App for TilemanApp {
                     draw_toolbox(ctx, ui, init, preview_scale, scheduled_action, output_path)
                 });
                 //draw tile list
-                egui::SidePanel::right("tile_list").show(ctx, |ui| {
+                egui::SidePanel::left("tile_list").show(ctx, |ui| {
                     draw_tiles_panel(
                         ctx,
                         ui,
@@ -443,7 +443,7 @@ fn draw_tiles_panel(
     ui.text_edit_singleline(search_selection)
         .on_hover_text_at_pointer("Search tiles");
     ui.heading("tiles");
-    egui::ScrollArea::vertical().show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
         for category_index in indices(&init.categories) {
             let category = &mut init.categories[category_index];
             egui::CollapsingHeader::new(category.name.as_str())
