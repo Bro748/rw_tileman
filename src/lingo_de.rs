@@ -312,7 +312,10 @@ pub fn parse_tile_init<'a>(
                     for oldcat in additional_categories.clone()
                     {
                         if oldcat == newcat
-                        { newcat.subfolder = oldcat.subfolder; break; }
+                        {
+                            newcat.subfolder = oldcat.subfolder;
+                            newcat.tiles = oldcat.tiles;
+                            break; }
                     }
                     categories.push(current_category);
                     current_category = newcat;
@@ -323,7 +326,11 @@ pub fn parse_tile_init<'a>(
             let maybe_new_item = parse_tile_info(line, true);
             match maybe_new_item {
                 Ok(new_item) => {
-                    current_category.tiles.push(new_item);
+                    if current_category.tiles.contains(&new_item)
+                    {
+                        let index = current_category.tiles.iter().position(|tile|tile == new_item).unwrap();
+                        current_category.tiles[index] = new_item; }
+                    else { current_category.tiles.push(new_item); }
                 }
                 Err(err) => errored_lines.push((line.to_string(), err)),
             }
