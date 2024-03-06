@@ -373,6 +373,11 @@ pub fn collect_categories_from_subfolders(
         .flatten()
         //.into_iter()
         .filter_map(|entry| entry.ok())
+        .filter(|entry| { // we only want directories
+            entry.file_type()
+                .map(|filetype| filetype.is_dir())
+                .unwrap_or(false)
+        })
         .filter_map(|entry| {
             let subinit = entry.path().join("init.txt");
             let subcolor = entry.path().join("color.txt");
@@ -396,7 +401,7 @@ pub fn collect_categories_from_subfolders(
                 category.subfolder = Some(subfolder);
 
                 let category_found = false;
-                for line in contents.lines() {
+                for line in contents.lines().filter(|line| !line.starts_with("--") && !line.trim().is_empty()) {
                     if let Some(caps) = REGEX_CATEGORY_INDEX.captures(line) {
                         category.index = caps[1].parse().unwrap_or(1);
                     }
