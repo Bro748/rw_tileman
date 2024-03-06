@@ -388,25 +388,36 @@ pub fn collect_categories_from_subfolders(
                     colorsplit.next().unwrap_or(0u8),
                     colorsplit.next().unwrap_or(0u8),
                 ];
-                let enabled = false;
-                let mut index = 0;
+                let name = entry.file_name().to_string_lossy().to_string();
+                let subfolder = root.clone().join(name.clone());
+                let mut errors = Vec::new();
+                let mut category = TileCategory::new_main(name, color, 0);
+                category.enabled = false;
+                category.subfolder = Some(subfolder);
+
+                let category_found = false;
                 for line in contents.lines() {
                     if let Some(caps) = REGEX_CATEGORY_INDEX.captures(line) {
-                        index = caps[1].parse().unwrap_or(1);
+                        category.index = caps[1].parse().unwrap_or(1);
+                    }
+                    else if !category_found && line.starts_with("-[") {
+                        let maybe_new_category = parse_category_header(line);
+                        match maybe_new_category {
+                            Ok(newcat) => {
+                                category.name = newcat.name;
+                                category.color = newcat.color;
+                            }
+                            Err(err) => errors.push((line.to_string(), err)),
+                        }
+                    } else {
+                        let maybe_new_item = parse_tile_info(line, true);
+                        match maybe_new_item {
+                            Ok(new_item) => category.tiles.push(new_item),
+                            Err(err) => errors.push((line.to_string(), err)),
+                        }
                     }
                 }
-                let (tiles, errors) = parse_tile_info_multiple(contents.as_str()).ok()?;
-                return Some((
-                    TileCategory::new_sub(
-                        root.clone(),
-                        entry.file_name().to_string_lossy().to_string(),
-                        color,
-                        tiles,
-                        enabled,
-                        index,
-                    ),
-                    errors,
-                ));
+                return Some((category, errors,));
             };
             None
             //return std::fs::read_to_string(subinit).ok();

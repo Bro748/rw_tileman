@@ -145,16 +145,16 @@ impl TileCategory {
         }
     }
     pub fn new_sub(
-        root: std::path::PathBuf,
+        //this isn't used anymore, can probably be deleted
+        subfolder: std::path::PathBuf,
         name: String,
         color: PrimitiveColor,
         tiles: Vec<TileInfo>,
-        enabled: bool,
         index: usize,
     ) -> Self {
         TileCategory {
-            enabled,
-            subfolder: Some(root.join(name.clone())),
+            enabled: false,
+            subfolder: Some(subfolder),
             name,
             color,
             tiles,
