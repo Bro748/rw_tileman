@@ -237,7 +237,7 @@ pub fn parse_tile_info_multiple<'a>(
 ) -> Result<(Vec<TileInfo>, DeserErrorReports), DeserError> {
     let mut errors = Vec::new();
     let mut tiles = Vec::new();
-    for line in text.lines().filter(|line| !line.starts_with("--") && !line.trim().is_empty()) {
+    for line in text.lines().filter(|line| !line.starts_with('-') && !line.trim().is_empty()) {
         match parse_tile_info(line, false) {
             Ok(tile) => tiles.push(tile),
             Err(err) => errors.push((line.to_string(), err)),
@@ -284,41 +284,29 @@ pub fn parse_tile_init<'a>(
     root: std::path::PathBuf,
 ) -> Result<TileInit, AppError> {
     let mut errored_lines = Vec::new();
-    //let mut success_tiles = Vec::new();
-    let mut current_category: TileCategory =
-        TileCategory::new_main(String::from("NO_CATEGORY"), [255, 0, 0], 0);
-    //  {
-    //     name: "NO_CATEGORY".to_string(),
-    //     color: [255, 0, 0],
-    //     tiles: Vec::new(),
-    //     subfolder: None,
-    // };
+    let mut current_category: Option<TileCategory> = None;
     let mut categories = Vec::new();
-    //let mut results_map = GroupMap::new();
 
     for line in text.lines().filter(|line| !line.starts_with("--") && !line.trim().is_empty()) {
-        // if line.starts_with("--") || line.trim().is_empty() {
-        //     continue;
-        // } else
-        if line.starts_with("-[")
-        /* && line.ends_with("]") */
-        {
+        if line.starts_with("-[") {
             //let maybe_new_category = Err(DeserError::MissingValue);
             let maybe_new_category = parse_category_header(line);
             match maybe_new_category {
                 Ok(mut newcat) => {
                     //thalber would kill me for this, but it compiles
                     //and supposedly in rust if it compiles it's Good Code, so :leditoroverload:
-                    for oldcat in additional_categories.clone()
-                    {
-                        if oldcat == newcat
-                        {
+                    for oldcat in additional_categories.clone() {
+                        if oldcat == newcat {
                             newcat.subfolder = oldcat.subfolder;
                             newcat.tiles = oldcat.tiles;
-                            break; }
+                            break; 
+                        }
                     }
-                    categories.push(current_category);
-                    current_category = newcat;
+                    // Only push the category if its not the first time through
+                    if let Some(category) = &current_category {
+                        categories.push(category.clone());
+                    }
+                    current_category = Some(newcat);
                 }
                 Err(err) => errored_lines.push((line.to_string(), err)),
             }
@@ -326,17 +314,28 @@ pub fn parse_tile_init<'a>(
             let maybe_new_item = parse_tile_info(line, true);
             match maybe_new_item {
                 Ok(new_item) => {
-                    if current_category.tiles.contains(&new_item)
-                    {
-                        let index = current_category.tiles.iter().position(|tile| *tile == new_item).unwrap();
-                        current_category.tiles[index] = new_item; }
-                    else { current_category.tiles.push(new_item); }
+                    // only add tiles if there has been a category already
+                    if let Some(category) = &mut current_category {
+                        if category.tiles.contains(&new_item) {
+                            let index = category.tiles.iter()
+                                .position(|tile| *tile == new_item)
+                                .unwrap();
+                            category.tiles[index] = new_item; 
+                        } else { 
+                            category.tiles.push(new_item); 
+                        }
+                    }
                 }
                 Err(err) => errored_lines.push((line.to_string(), err)),
             }
         }
     }
-    categories.push(current_category);
+    if let Some(category) = &current_category {
+        categories.push(category.clone());
+    } else {
+        // if we have "None" as the category at this point, there are none in the init file
+        return Ok(TileInit{ root, categories, errored_lines });
+    }
     let categories_clone = categories.clone();
     categories = categories
         .into_iter()
